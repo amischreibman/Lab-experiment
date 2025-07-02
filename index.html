@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דיאגרמת ונתוני אינטראקציות בוטים-משתמשים</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Karantina -->
-    <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&display=swap" rel="stylesheet">
-    <!-- D3.js CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Hebrew:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
-            font-family: 'Karantina', cursive; /* Updated font-family */
+            font-family: 'Playpen Sans Hebrew', cursive; /* Updated font-family */
             background-color: #f0f4f8;
             color: #333;
             overflow-x: hidden; /* Prevent horizontal scroll */
@@ -125,9 +122,9 @@
 <body class="p-4">
     <div class="container">
         <h1 class="text-4xl font-extrabold text-center mb-6 text-gray-800">דיאגרמת ונתוני אינטראקציות בוטים-משתמשים</h1>
+
         <div id="d3-container">
-            <!-- D3.js will render the SVG here -->
-        </div>
+            </div>
 
         <div class="card mt-8">
             <h2 class="text-2xl font-bold mb-4 text-gray-700">מקרא</h2>
@@ -163,11 +160,9 @@
             </div>
         </div>
 
-        <!-- Section for Data and Diagrams -->
         <div class="card mt-8">
             <h2 class="text-2xl font-bold mb-4 text-gray-700">📊 נתונים ודיאגרמות</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
-                <!-- Fairy Chart -->
                 <div class="p-4 border border-gray-200 rounded-lg">
                     <h3 class="text-xl font-semibold mb-3 text-gray-700">היענות לסקרים (פיה)</h3>
                     <div class="flex items-center justify-end mb-2">
@@ -179,7 +174,6 @@
                     <p class="text-sm text-gray-600">מתוך 4 משתמשים שקיבלו סקרים, 2 הגיבו (יהלי, לירן).</p>
                 </div>
 
-                <!-- Leprechaun Chart -->
                 <div class="p-4 border border-gray-200 rounded-lg">
                     <h3 class="text-xl font-semibold mb-3 text-gray-700">משימות לפריקון</h3>
                     <div class="mb-2">
@@ -198,7 +192,6 @@
                     </div>
                 </div>
 
-                <!-- Dragon Mood Line Chart -->
                 <div class="md:col-span-2 p-4 border border-gray-200 rounded-lg">
                     <h3 class="text-xl font-semibold mb-3 text-gray-700">מצב רוח הדרקון על ציר זמן</h3>
                     <div id="dragon-mood-chart" class="chart-container"></div>
@@ -207,7 +200,6 @@
             </div>
         </div>
 
-        <!-- מסקנות עיקריות -->
         <div class="card mt-8">
             <h2 class="text-2xl font-bold mb-4 text-gray-700">💡 מסקנות עיקריות מהניסוי</h2>
             <ul class="list-disc list-inside text-gray-700 space-y-2 text-right">
