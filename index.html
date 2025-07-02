@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דיאגרמת ונתוני אינטראקציות בוטים-משתמשים</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Karantina -->
+    <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- D3.js CDN -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Karantina', cursive; /* Updated font-family */
+            background-color: #f0f4f8;
+            color: #333;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        #d3-container {
+            width: 100%;
+            height: 500px; /* Fixed height for the D3 graph */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem; /* Space below the graph */
+        }
+        .node circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.875rem;
+            z-index: 100; /* Ensure tooltip is on top */
+        }
+        .progress-bar-container {
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            height: 1.5rem;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 0.5rem;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.5s ease-in-out;
+        }
+        .fairy-bg { background-color: #a78bfa; } /* Purple */
+        .leprechaun-bg { background-color: #34d399; } /* Green */
+        .dragon-bg { background-color: #f87171; } /* Red-orange */
+
+        /* Styles for the line chart */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 2rem;
+            background-color: #fdfdfd;
+            border-radius: 0.75rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+            padding: 1rem;
+            overflow: hidden; /* Ensure content stays within bounds */
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #cbd5e0;
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            font-size: 10px;
+            fill: #64748b;
+        }
+        .line {
+            fill: none;
+            stroke: #f87171; /* Dragon color */
+            stroke-width: 3px;
+            transition: stroke-width 0.3s ease;
+        }
+        .line:hover {
+            stroke-width: 5px;
+        }
+        .dot {
+            fill: #f87171;
+            stroke: #fff;
+            stroke-width: 1.5px;
+            transition: r 0.2s ease;
+        }
+        .dot:hover {
+            r: 7px;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-center mb-6 text-gray-800">דיאגרמת ונתוני אינטראקציות בוטים-משתמשים</h1>
+        <div id="d3-container">
+            <!-- D3.js will render the SVG here -->
+        </div>
+
+        <div class="card mt-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">מקרא</h2>
+            <div class="flex flex-wrap justify-center gap-4 text-gray-700">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+                    <span>משתמש</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-purple-500 mr-2"></div>
+                    <span>פיה</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                    <span>לפריקון</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                    <span>דרקון</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-1 bg-gray-400 mr-2"></div>
+                    <span>אינטראקציה כללית</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-1 bg-green-600 mr-2"></div>
+                    <span>אינטראקציה חיובית/הצלחה</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-1 bg-red-600 mr-2"></div>
+                    <span>אינטראקציה שלילית/כשל</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section for Data and Diagrams -->
+        <div class="card mt-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">📊 נתונים ודיאגרמות</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
+                <!-- Fairy Chart -->
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">היענות לסקרים (פיה)</h3>
+                    <div class="flex items-center justify-end mb-2">
+                        <div class="text-lg font-medium ml-2">50%</div>
+                        <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full fairy-bg rounded-full" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600">מתוך 4 משתמשים שקיבלו סקרים, 2 הגיבו (יהלי, לירן).</p>
+                </div>
+
+                <!-- Leprechaun Chart -->
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">משימות לפריקון</h3>
+                    <div class="mb-2">
+                        <p class="text-sm font-medium text-gray-700 mb-1">משימות שאושרו:</p>
+                        <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full leprechaun-bg rounded-full" style="width: 50%;"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">3 משימות אושרו (יהלי, גיא, לירן).</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 mb-1">משימות שנדחו:</p>
+                        <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full dragon-bg rounded-full" style="width: 50%;"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">3 משימות נדחו (יהלי, תום).</p>
+                    </div>
+                </div>
+
+                <!-- Dragon Mood Line Chart -->
+                <div class="md:col-span-2 p-4 border border-gray-200 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">מצב רוח הדרקון על ציר זמן</h3>
+                    <div id="dragon-mood-chart" class="chart-container"></div>
+                    <p class="text-sm text-gray-600 mt-2">גרף זה מציג את השינויים במצב רוח הדרקון (אחוזים) לאורך ימי הניסוי. הציר האופקי מייצג תאריך ושעה, והציר האנכי מייצג את אחוז מצב הרוח הכללי.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- מסקנות עיקריות -->
+        <div class="card mt-8">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">💡 מסקנות עיקריות מהניסוי</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-right">
+                <li>
+                    <span class="font-semibold">פוטנציאל גבוה למשחוק שגרתי:</span> הרעיון של הפיכת משימות שגרתיות לפעילויות מהנות וקהילתיות באמצעות בוטים הוכח כמוצלח ומעורר עניין.
+                </li>
+                <li>
+                    <span class="font-semibold">חשיבות קריטית לדיוק נתונים:</span> הכשלים העיקריים נבעו מחוסר דיוק במידע (פרטי נסיעה, זיהוי משתמש, מין). בוטים שאינם "זוכרים" או מציעים מידע שגוי פוגעים קשות באמינות ובחוויה.
+                </li>
+                <li>
+                    <span class="font-semibold">צורך בלמידה והתאמה אישית:</span> הבוטים חייבים להיות מסוגלים ללמוד מהעדפות המשתמש ולהתאים את התקשורת שלהם כדי למנוע תסכול.
+                </li>
+                <li>
+                    <span class="font-semibold">הבחנה בין תפקידי בוטים:</span> כל בוט (פיה, לפריקון, דרקון) מילא תפקיד ייחודי ויצר סוג אינטראקציה שונה, מה שמוסיף לעושר החוויה.
+                </li>
+                <li>
+                    <span class="font-semibold">מעורבות קהילתית:</span> הניסוי הראה כי ניתן לעודד תחושת קהילתיות ואחריות משותפת דרך הבוטים והאלמנטים המשחקיים.
+                </li>
+            </ul>
+            <p class="text-gray-600 mt-6">
+                הניסוי הקצר סיפק תובנות חשובות לגבי הפוטנציאל והאתגרים בשימוש בבוטים למשחוק משימות קהילתיות.
+                המשך הפיתוח צריך להתמקד בשיפור הדיוק, ההתאמה האישית ויכולות הלמידה של הבוטים, כמו גם באינטגרציה חלקה עם מערכת ניהול הנסיעות.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Ensure D3 is loaded before executing D3-dependent code
+        window.addEventListener('DOMContentLoaded', () => {
+            // Define the data for the force-directed graph
+            const nodesData = [
+                { id: "יהלי", group: "user", details: "מעורבות גבוהה עם בוטים, ביצע משימות, שאל שאלות." },
+                { id: "לירן", group: "user", details: "היענות ראשונית לסקרים." },
+                { id: "רותם", group: "user", details: "קיבל סקרים." },
+                { id: "תום", group: "user", details: "אינטראקציות מורכבות עם הלפריקון (טעויות בוט, אימוג'י)." },
+                { id: "גיא", group: "user", details: "ביצע משימה בהצלחה." },
+                { id: "מעין", group: "user", details: "קיבלה סקרים והצעות משימה." },
+                { id: "פיה", group: "bot", details: "בוט הסקרים. היענות טובה לסקרים." },
+                { id: "לפריקון", group: "bot", details: "בוט המשימות. הצלחות לצד אתגרי דיוק." },
+                { id: "דרקון", group: "bot", details: "בוט מצב הרוח הקהילתי. עורר שיח רגשי." }
+            ];
+
+            const linksData = [
+                // Fairy interactions
+                { source: "פיה", target: "יהלי", type: "positive", description: "היענות לסקר" },
+                { source: "פיה", target: "לירן", type: "positive", description: "היענות לסקר" },
+                { source: "פיה", target: "מעין", type: "neutral", description: "שליחת סקר" },
+                { source: "פיה", target: "רותם", type: "neutral", description: "שליחת סקר" },
+
+                // Leprechaun interactions
+                { source: "לפריקון", target: "יהלי", type: "positive", description: "אישר וביצע משימה" },
+                { source: "לפריקון", target: "יהלי", type: "negative", description: "דחיית משימה (רכב לא רלוונטי)" },
+                { source: "לפריקון", target: "תום", type: "negative", description: "סירוב משימה (טעויות בוט)" },
+                { source: "לפריקון", target: "תום", type: "negative", description: "תלונות על אימוג'י ומין" },
+                { source: "לפריקון", target: "גיא", type: "positive", description: "אישר וביצע משימה" },
+                { source: "לפריקון", target: "מעין", type: "neutral", description: "הצעת משימה" },
+
+                // Dragon interactions
+                { source: "דרקון", target: "יהלי", type: "positive", description: "שאל על מצב הדרקון" },
+                { source: "דרקון", target: "תום", type: "positive", description: "שאל על מצב הדרקון, שיח פיוטי" },
+
+                // Bot relationships (conceptual)
+                { source: "לפריקון", target: "דרקון", type: "neutral", description: "משימות הלפריקון משפיעות על הדרקון" },
+                { source: "פיה", target: "דרקון", type: "neutral", description: "סקרים הפיה משפיעים על הדרקון" }
+            ];
+
+            // Set up the SVG container for force-directed graph
+            const svgContainer = document.getElementById('d3-container');
+            const svgWidth = svgContainer.clientWidth;
+            const svgHeight = svgContainer.clientHeight;
+
+            const svg = d3.select("#d3-container").append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
+                .attr("preserveAspectRatio", "xMidYMid meet");
+
+            // Create a tooltip div
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip");
+
+            // Define colors for groups
+            const colorScale = d3.scaleOrdinal()
+                .domain(["user", "bot"])
+                .range(["#3b82f6", "#8b5cf6"]); // Blue for users, Purple for bots
+
+            const botColorScale = d3.scaleOrdinal()
+                .domain(["פיה", "לפריקון", "דרקון"])
+                .range(["#a78bfa", "#34d399", "#f87171"]); // Purple for Fairy, Green for Leprechaun, Red-orange for Dragon
+
+            const linkColorScale = d3.scaleOrdinal()
+                .domain(["positive", "negative", "neutral"])
+                .range(["#10b981", "#ef4444", "#9ca3af"]); // Green for positive, Red for negative, Gray for neutral
+
+            // Create the force simulation
+            const simulation = d3.forceSimulation(nodesData)
+                .force("link", d3.forceLink(linksData).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(svgWidth / 2, svgHeight / 2))
+                .force("collide", d3.forceCollide(30)); // Prevent nodes from overlapping
+
+            // Create links
+            const link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(linksData)
+                .join("line")
+                .attr("class", "link")
+                .attr("stroke", d => linkColorScale(d.type));
+
+            // Create nodes
+            const node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(nodesData)
+                .join("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            node.append("circle")
+                .attr("r", 20)
+                .attr("fill", d => d.group === "bot" ? botColorScale(d.id) : colorScale(d.group));
+
+            node.append("text")
+                .attr("dx", 0)
+                .attr("dy", 35)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("fill", "#333")
+                .text(d => d.id);
+
+            // Add hover effects for nodes
+            node.on("mouseover", function(event, d) {
+                tooltip.html(`<strong>${d.id}</strong><br>${d.details}`)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px")
+                    .style("opacity", 1);
+            })
+            .on("mouseout", function() {
+                tooltip.style("opacity", 0);
+            });
+
+            // Update positions on each tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            // Handle window resize for force-directed graph
+            window.addEventListener('resize', () => {
+                const newWidth = svgContainer.clientWidth;
+                const newHeight = svgContainer.clientHeight;
+                svg.attr("viewBox", `0 0 ${newWidth} ${newHeight}`);
+                simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+                simulation.alpha(0.3).restart();
+
+                // Also redraw the line chart on resize
+                drawDragonMoodChart();
+            });
+
+            // Dragon Mood Line Chart Data
+            const dragonMoodData = [
+                { date: new Date("2025-06-28T00:16:01"), mood: 50 },
+                { date: new Date("2025-06-28T01:10:13"), mood: 55 },
+                { date: new Date("2025-06-28T15:25:55"), mood: 50 },
+                { date: new Date("2025-06-28T21:46:33"), mood: 50 },
+                { date: new Date("2025-06-29T07:46:10"), mood: 51 },
+                { date: new Date("2025-06-29T20:15:17"), mood: 54 },
+                { date: new Date("2025-06-29T20:17:19"), mood: 54 },
+                { date: new Date("2025-06-30T11:08:42"), mood: 52 }
+            ];
+
+            function drawDragonMoodChart() {
+                const chartDiv = document.getElementById('dragon-mood-chart');
+                chartDiv.innerHTML = ''; // Clear previous chart on redraw
+
+                const margin = { top: 20, right: 30, bottom: 60, left: 40 }; // Increased bottom margin for labels
+                const width = chartDiv.clientWidth - margin.left - margin.right;
+                const height = chartDiv.clientHeight - margin.top - margin.bottom;
+
+                const chartSvg = d3.select("#dragon-mood-chart").append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                // X scale (time)
+                const xScale = d3.scaleTime()
+                    .domain(d3.extent(dragonMoodData, d => d.date))
+                    .range([0, width]);
+
+                // Y scale (mood percentage)
+                const yScale = d3.scaleLinear()
+                    .domain([0, 100]) // Mood from 0% to 100%
+                    .range([height, 0]);
+
+                // X axis
+                chartSvg.append("g")
+                    .attr("class", "axis x-axis")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(xScale)
+                        .ticks(d3.timeDay.every(1)) // Show ticks for each day
+                        .tickFormat(d3.timeFormat("%b %d")) // Format: Jun 28
+                    )
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end");
+
+                // Y axis
+                chartSvg.append("g")
+                    .attr("class", "axis y-axis")
+                    .call(d3.axisLeft(yScale).ticks(5).tickFormat(d => d + "%"));
+
+                // Add Y axis label
+                chartSvg.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", -margin.left + 10)
+                    .attr("x", -height / 2)
+                    .attr("dy", "1em")
+                    .style("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .style("fill", "#64748b")
+                    .text("מצב רוח כללי (%)");
+
+                // Line generator
+                const line = d3.line()
+                    .x(d => xScale(d.date))
+                    .y(d => yScale(d.mood));
+
+                // Draw the line
+                chartSvg.append("path")
+                    .datum(dragonMoodData)
+                    .attr("class", "line")
+                    .attr("d", line);
+
+                // Add circles for data points
+                chartSvg.selectAll(".dot")
+                    .data(dragonMoodData)
+                    .enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", d => xScale(d.date))
+                    .attr("cy", d => yScale(d.mood))
+                    .attr("r", 5)
+                    .on("mouseover", function(event, d) {
+                        tooltip.html(`<strong>${d3.timeFormat("%Y-%m-%d %H:%M")(d.date)}</strong><br>מצב רוח: ${d.mood}%`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px")
+                            .style("opacity", 1);
+                    })
+                    .on("mouseout", function() {
+                        tooltip.style("opacity", 0);
+                    });
+            }
+
+            // Initial draw of the mood chart
+            drawDragonMoodChart();
+        });
+    </script>
+</body>
+</html>
